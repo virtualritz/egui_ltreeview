@@ -52,6 +52,8 @@ pub struct TreeViewBuilder<'ui, NodeIdType: NodeId> {
     input: &'ui mut Input<NodeIdType>,
     output: &'ui mut Output<NodeIdType>,
     striped: bool,
+    /// Deferred rename result: (node_id, new_name). Empty string = cancelled.
+    pub(crate) rename_result: Option<(NodeIdType, String)>,
 }
 
 impl<'ui, NodeIdType: NodeId> TreeViewBuilder<'ui, NodeIdType> {
@@ -82,6 +84,7 @@ impl<'ui, NodeIdType: NodeId> TreeViewBuilder<'ui, NodeIdType> {
             input,
             output,
             striped: false,
+            rename_result: None,
         }
     }
 
@@ -395,6 +398,46 @@ impl<'ui, NodeIdType: NodeId> TreeViewBuilder<'ui, NodeIdType> {
             self.state.is_selected(&node.id),
             self.ui_data.has_focus,
         );
+
+        // Inline rename overlay: paint a TextEdit over the label rect
+        // when this node is in rename mode.
+        if let Some((ref rename_id, ref mut rename_buf)) = self.state.renaming {
+            if *rename_id == node.id {
+                let edit_id = self.ui.id().with("rename_edit");
+                let mut ui = self.ui.new_child(
+                    egui::UiBuilder::new()
+                        .max_rect(label)
+                        .layout(egui::Layout::left_to_right(egui::Align::Center)),
+                );
+                // Paint over the label background.
+                ui.painter().rect_filled(
+                    label,
+                    0.0,
+                    ui.visuals().extreme_bg_color,
+                );
+                let response = ui.add(
+                    egui::TextEdit::singleline(rename_buf)
+                        .id(edit_id)
+                        .desired_width(label.width())
+                        .frame(egui::Frame::NONE),
+                );
+                // Request focus on the first frame.
+                if !response.has_focus() {
+                    response.request_focus();
+                }
+                // Commit on Enter or focus-lost.
+                if response.lost_focus() {
+                    let committed_name = rename_buf.clone();
+                    let committed_id = rename_id.clone();
+                    // Defer clear + action emit to after mutable borrow ends.
+                    self.rename_result = Some((committed_id, committed_name));
+                }
+                // Cancel on Escape.
+                if ui.input(|i| i.key_pressed(egui::Key::Escape)) {
+                    self.rename_result = Some((rename_id.clone(), String::new()));
+                }
+            }
+        }
 
         // Do input
         self.do_input_output(node, &outer_rect, closer.as_ref());

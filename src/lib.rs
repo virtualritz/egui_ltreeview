@@ -238,6 +238,10 @@ impl<'context_menu, NodeIdType: NodeId> TreeView<'context_menu, NodeIdType> {
             }));
         }
 
+        if let Some((id, new_name)) = ui_data.rename_action {
+            actions.push(Action::Rename { id, new_name });
+        }
+
         if ui_data.interaction.drag_stopped() {
             state.reset_dragged();
         }
@@ -406,6 +410,7 @@ fn draw_foreground<'context_menu, NodeIdType: NodeId>(
         activate: None,
         selected: false,
         space_used: Rect::from_min_size(ui.cursor().min, Vec2::ZERO),
+        rename_action: None,
     };
     // Run the build tree view closure
 
@@ -423,6 +428,7 @@ fn draw_foreground<'context_menu, NodeIdType: NodeId>(
         &mut output,
     );
     build_tree_view(&mut tree_builder);
+    let rename_result = tree_builder.rename_result.take();
 
     let tree_view_rect = ui_data.space_used.union(interaction_rect);
     ui.allocate_rect(tree_view_rect, Sense::hover());
@@ -507,6 +513,17 @@ fn draw_foreground<'context_menu, NodeIdType: NodeId>(
     }
 
     state.context_menu_was_open = ui_data.interaction.context_menu_opened();
+
+    // Process deferred rename result.
+    if let Some((id, new_name)) = rename_result {
+        if new_name.is_empty() {
+            // Cancelled.
+            state.cancel_rename();
+        } else {
+            state.cancel_rename();
+            ui_data.rename_action = Some((id, new_name));
+        }
+    }
 
     (ui_data, tree_view_rect)
 }
@@ -669,6 +686,17 @@ pub enum Action<NodeIdType> {
     /// Indicates that the nodes should be moved to an
     /// external target (e.g., another panel).
     MoveExternal(DragAndDropExternal<NodeIdType>),
+    /// A node was renamed via inline editing.
+    ///
+    /// Emitted when the user completes an inline rename (Enter or
+    /// focus-lost). Start renaming with
+    /// [`TreeViewState::start_rename`].
+    Rename {
+        /// The node that was renamed.
+        id: NodeIdType,
+        /// The new name entered by the user.
+        new_name: String,
+    },
 }
 
 /// Represents a drag-and-drop interaction where nodes are dragged outside the TreeView.
@@ -761,6 +789,8 @@ struct UiData<NodeIdType> {
     activate: Option<Vec<NodeIdType>>,
     selected: bool,
     space_used: Rect,
+    /// Deferred rename action from inline editing.
+    rename_action: Option<(NodeIdType, String)>,
 }
 
 /// When you ast a rectangle if it contains a point it does so inclusive the upper bound.

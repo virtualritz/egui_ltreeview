@@ -40,6 +40,9 @@ pub struct TreeViewState<NodeIdType: Eq + std::hash::Hash> {
     pub(crate) last_clicked_node: Option<NodeIdType>,
     /// If and what is being dragged.
     dragged: Option<DragState<NodeIdType>>,
+    /// Node currently being renamed inline (id + editing buffer).
+    #[cfg_attr(feature = "persistence", serde(skip))]
+    pub(crate) renaming: Option<(NodeIdType, String)>,
 }
 
 impl<NodeIdType: NodeId> Default for TreeViewState<NodeIdType> {
@@ -55,6 +58,7 @@ impl<NodeIdType: NodeId> Default for TreeViewState<NodeIdType> {
             node_states: HashMap::new(),
             context_menu_was_open: false,
             last_clicked_node: None,
+            renaming: None,
         }
     }
 }
@@ -117,6 +121,21 @@ impl<NodeIdType: NodeId> TreeViewState<NodeIdType> {
     /// Effectively this makes the node visible in the tree.
     pub fn expand_node(&mut self, _id: &NodeIdType) {
         println!("TreeViewState::expand_node not yet implemented");
+    }
+
+    /// Start inline renaming for a node with the given initial text.
+    pub fn start_rename(&mut self, id: NodeIdType, current_name: String) {
+        self.renaming = Some((id, current_name));
+    }
+
+    /// Cancel any active inline rename.
+    pub fn cancel_rename(&mut self) {
+        self.renaming = None;
+    }
+
+    /// Check if a node is currently being renamed.
+    pub fn is_renaming(&self, id: &NodeIdType) -> bool {
+        self.renaming.as_ref().is_some_and(|(rid, _)| rid == id)
     }
 
     /// Set the openness state of a node.

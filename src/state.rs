@@ -41,7 +41,10 @@ pub struct TreeViewState<NodeIdType: Eq + std::hash::Hash> {
     /// If and what is being dragged.
     dragged: Option<DragState<NodeIdType>>,
     /// Node currently being renamed inline (id + editing buffer).
-    #[cfg_attr(feature = "persistence", serde(skip))]
+    #[cfg_attr(
+        feature = "persistence",
+        serde(skip, default = "Option::default")
+    )]
     pub(crate) renaming: Option<(NodeIdType, String)>,
 }
 

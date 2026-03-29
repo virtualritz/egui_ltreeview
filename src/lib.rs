@@ -180,7 +180,7 @@ impl<'context_menu, NodeIdType: NodeId> TreeView<'context_menu, NodeIdType> {
             // to allow navigating throught the tree.
             // In case we gain focus from a drag action we select the dragged node directly.
             if state.selected().is_empty() {
-                let fallback_selection = state.get_dragged().and_then(|v| v.first());
+                let fallback_selection = state.dragged().and_then(|v| v.first());
                 if let Some(fallback_selection) = fallback_selection {
                     state.set_one_selected(fallback_selection.clone());
                 }
@@ -195,7 +195,7 @@ impl<'context_menu, NodeIdType: NodeId> TreeView<'context_menu, NodeIdType> {
         if ui_data.interaction.dragged() {
             if let Some((drop_id, position)) = &ui_data.drop_target {
                 actions.push(Action::Drag(DragAndDrop {
-                    source: state.get_simplified_dragged().cloned().unwrap_or_default(),
+                    source: state.simplified_dragged().cloned().unwrap_or_default(),
                     target: drop_id.clone(),
                     position: position.clone(),
                     drop_marker_idx: ui_data.drop_marker_idx,
@@ -204,7 +204,7 @@ impl<'context_menu, NodeIdType: NodeId> TreeView<'context_menu, NodeIdType> {
                 if let Some(position) = ui.ctx().pointer_latest_pos() {
                     actions.push(Action::DragExternal(DragAndDropExternal {
                         position,
-                        source: state.get_simplified_dragged().cloned().unwrap_or_default(),
+                        source: state.simplified_dragged().cloned().unwrap_or_default(),
                     }));
                 }
             }
@@ -212,7 +212,7 @@ impl<'context_menu, NodeIdType: NodeId> TreeView<'context_menu, NodeIdType> {
         if ui_data.interaction.drag_stopped() {
             if let Some((drop_id, position)) = ui_data.drop_target {
                 actions.push(Action::Move(DragAndDrop {
-                    source: state.get_simplified_dragged().cloned().unwrap_or_default(),
+                    source: state.simplified_dragged().cloned().unwrap_or_default(),
                     target: drop_id,
                     position,
                     drop_marker_idx: ui_data.drop_marker_idx,
@@ -221,7 +221,7 @@ impl<'context_menu, NodeIdType: NodeId> TreeView<'context_menu, NodeIdType> {
                 if let Some(position) = ui.ctx().pointer_latest_pos() {
                     actions.push(Action::MoveExternal(DragAndDropExternal {
                         position,
-                        source: state.get_simplified_dragged().cloned().unwrap_or_default(),
+                        source: state.simplified_dragged().cloned().unwrap_or_default(),
                     }));
                 }
             }
@@ -391,11 +391,11 @@ fn draw_foreground<'context_menu, NodeIdType: NodeId>(
 
     let interaction = interact_no_expansion(ui, interaction_rect, id, Sense::click_and_drag());
     let mut output = Output::None;
-    let mut input = get_input::<NodeIdType>(ui, &interaction, id, settings);
+    let mut input = read_input::<NodeIdType>(ui, &interaction, id, settings);
     let drag_layer_offset = ui
         .input(|i| i.pointer.press_origin())
         .zip(ui.input(|i| i.pointer.latest_pos()))
-        .zip(state.get_drag_overlay_offset())
+        .zip(state.drag_overlay_offset())
         .map(|((origin, latest), drag_overlay_offset)| (latest - origin) + drag_overlay_offset)
         .unwrap_or_default();
     let mut ui_data = UiData {
@@ -869,7 +869,7 @@ enum Output<NodeIdType> {
     None,
 }
 
-fn get_input<NodeIdType>(
+fn read_input<NodeIdType>(
     ui: &Ui,
     interaction: &Response,
     id: Id,

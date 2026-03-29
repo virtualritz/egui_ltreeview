@@ -167,7 +167,7 @@ impl<NodeIdType: NodeId> TreeViewState<NodeIdType> {
             }
         }
     }
-    pub(crate) fn get_simplified_dragged(&self) -> Option<&Vec<NodeIdType>> {
+    pub(crate) fn simplified_dragged(&self) -> Option<&Vec<NodeIdType>> {
         self.dragged.as_ref().map(|state| &state.simplified)
     }
 
@@ -195,7 +195,7 @@ impl<NodeIdType: NodeId> TreeViewState<NodeIdType> {
         self.selected = selected;
     }
 
-    pub(crate) fn get_dragged(&self) -> Option<&Vec<NodeIdType>> {
+    pub(crate) fn dragged(&self) -> Option<&Vec<NodeIdType>> {
         self.dragged.as_ref().map(|state| &state.dragged)
     }
 
@@ -206,7 +206,7 @@ impl<NodeIdType: NodeId> TreeViewState<NodeIdType> {
             .is_some_and(|state| state.dragged.contains(id))
     }
 
-    pub(crate) fn get_drag_overlay_offset(&self) -> Option<Vec2> {
+    pub(crate) fn drag_overlay_offset(&self) -> Option<Vec2> {
         self.dragged.as_ref().map(|d| d.drag_overlay_offset)
     }
 
@@ -238,10 +238,10 @@ impl<NodeIdType: NodeId> TreeViewState<NodeIdType> {
     pub(crate) fn set_last_clicked(&mut self, id: &NodeIdType) {
         self.last_clicked_node = Some(id.clone());
     }
-    pub(crate) fn get_selection_cursor(&self) -> Option<&NodeIdType> {
+    pub(crate) fn selection_cursor(&self) -> Option<&NodeIdType> {
         self.selection_cursor.as_ref()
     }
-    pub(crate) fn get_selection_pivot(&self) -> Option<&NodeIdType> {
+    pub(crate) fn selection_pivot(&self) -> Option<&NodeIdType> {
         self.selection_pivot.as_ref()
     }
 }

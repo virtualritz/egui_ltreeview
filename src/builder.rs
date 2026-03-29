@@ -537,8 +537,8 @@ impl<'ui, NodeIdType: NodeId> TreeViewBuilder<'ui, NodeIdType> {
             Input::KeyUp { previous_node } => 'arm: {
                 let current_node_is_cursor = self
                     .state
-                    .get_selection_cursor()
-                    .or(self.state.get_selection_pivot())
+                    .selection_cursor()
+                    .or(self.state.selection_pivot())
                     .is_some_and(|cursor_id| cursor_id == &node.id);
 
                 if current_node_is_cursor {
@@ -558,8 +558,8 @@ impl<'ui, NodeIdType: NodeId> TreeViewBuilder<'ui, NodeIdType> {
             Input::KeyUpAndCommand { previous_node } => 'arm: {
                 let current_node_is_cursor = self
                     .state
-                    .get_selection_cursor()
-                    .or(self.state.get_selection_pivot())
+                    .selection_cursor()
+                    .or(self.state.selection_pivot())
                     .is_some_and(|cursor_id| cursor_id == &node.id);
                 if current_node_is_cursor {
                     if let Some((previous_node, prev_rect)) = previous_node {
@@ -575,7 +575,7 @@ impl<'ui, NodeIdType: NodeId> TreeViewBuilder<'ui, NodeIdType> {
                 nodes_to_select,
                 next_cursor,
             } => 'arm: {
-                let Some(pivot) = self.state.get_selection_pivot() else {
+                let Some(pivot) = self.state.selection_pivot() else {
                     *self.input = Input::None;
                     break 'arm;
                 };
@@ -588,8 +588,8 @@ impl<'ui, NodeIdType: NodeId> TreeViewBuilder<'ui, NodeIdType> {
                 let Some((previous_node, previous_rect)) = previous_node else {
                     let current_node_is_cursor = self
                         .state
-                        .get_selection_cursor()
-                        .or(self.state.get_selection_pivot())
+                        .selection_cursor()
+                        .or(self.state.selection_pivot())
                         .is_some_and(|cursor_id| cursor_id == &node.id);
                     if current_node_is_cursor {
                         *self.input = Input::None;
@@ -601,7 +601,7 @@ impl<'ui, NodeIdType: NodeId> TreeViewBuilder<'ui, NodeIdType> {
                     break 'arm;
                 };
 
-                let Some(cursor) = self.state.get_selection_cursor() else {
+                let Some(cursor) = self.state.selection_cursor() else {
                     if self.state.is_selection_pivot(&node.id) {
                         *self.output = Output::Select {
                             selection: vec![previous_node.clone(), node.id.clone()],
@@ -668,8 +668,8 @@ impl<'ui, NodeIdType: NodeId> TreeViewBuilder<'ui, NodeIdType> {
                 }
                 *is_next = self
                     .state
-                    .get_selection_cursor()
-                    .or(self.state.get_selection_pivot())
+                    .selection_cursor()
+                    .or(self.state.selection_pivot())
                     .is_some_and(|cursor_id| cursor_id == &node.id);
             }
             Input::KeyDownAndCommand { is_next } => 'arm: {
@@ -680,8 +680,8 @@ impl<'ui, NodeIdType: NodeId> TreeViewBuilder<'ui, NodeIdType> {
                 }
                 *is_next = self
                     .state
-                    .get_selection_cursor()
-                    .or(self.state.get_selection_pivot())
+                    .selection_cursor()
+                    .or(self.state.selection_pivot())
                     .is_some_and(|cursor_id| cursor_id == &node.id);
             }
             Input::KeyDownAndShift {
@@ -689,7 +689,7 @@ impl<'ui, NodeIdType: NodeId> TreeViewBuilder<'ui, NodeIdType> {
                 next_cursor,
                 is_next,
             } => 'arm: {
-                let Some(pivot) = self.state.get_selection_pivot() else {
+                let Some(pivot) = self.state.selection_pivot() else {
                     *self.input = Input::None;
                     break 'arm;
                 };
@@ -739,8 +739,8 @@ impl<'ui, NodeIdType: NodeId> TreeViewBuilder<'ui, NodeIdType> {
 
                 *is_next = self
                     .state
-                    .get_selection_cursor()
-                    .or(self.state.get_selection_pivot())
+                    .selection_cursor()
+                    .or(self.state.selection_pivot())
                     .is_some_and(|cursor_id| cursor_id == &node.id);
             }
         }
@@ -785,7 +785,7 @@ impl<'ui, NodeIdType: NodeId> TreeViewBuilder<'ui, NodeIdType> {
                 if rect_contains_visually(row_rect, &pos) && !self.current_branch_dragged() {
                     self.ui_data.drop_on_self = self.state.is_dragged(&node.id);
                     if !self.ui_data.drop_on_self {
-                        self.ui_data.drop_target = self.get_drop_position(row_rect, node, &pos);
+                        self.ui_data.drop_target = self.drop_position(row_rect, node, &pos);
                         match self.ui_data.drop_target.as_ref() {
                             Some((_, dir_position)) if dir_position != &DirPosition::Last => {
                                 self.draw_drop_marker(row_rect.y_range(), dir_position);
@@ -828,13 +828,16 @@ impl<'ui, NodeIdType: NodeId> TreeViewBuilder<'ui, NodeIdType> {
 
                 // Double clicked
                 if double_click {
+                    // Double-click on the label always fires Activate when the
+                    // node is activatable.  For non-activatable dirs the legacy
+                    // behaviour (toggle expand) is preserved.
                     if node.activatable {
                         if self.state.is_selected(&node.id) {
                             *self.output = Output::ActivateSelection(activatable_nodes.clone());
                         } else {
                             *self.output = Output::ActivateThis(node.id.clone());
                         }
-                    } else {
+                    } else if node.is_dir {
                         self.state.set_openness(node.id.clone(), !node.is_open);
                     }
                     *self.input = Input::None;
@@ -849,7 +852,7 @@ impl<'ui, NodeIdType: NodeId> TreeViewBuilder<'ui, NodeIdType> {
                             *self.input = Input::None;
                             break 'block;
                         }
-                    } else if row_clicked && self.state.get_selection_pivot().is_none() {
+                    } else if row_clicked && self.state.selection_pivot().is_none() {
                         *self.output = Output::SelectOneNode(node.id.clone(), None);
                         *self.input = Input::None;
                     } else if row_clicked || self.state.is_selection_pivot(&node.id) {
@@ -901,7 +904,7 @@ impl<'ui, NodeIdType: NodeId> TreeViewBuilder<'ui, NodeIdType> {
         }
     }
 
-    fn get_drop_position(
+    fn drop_position(
         &self,
         row: &Rect,
         node: &Node<NodeIdType>,

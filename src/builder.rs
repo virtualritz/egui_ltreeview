@@ -358,8 +358,10 @@ impl<'ui, NodeIdType: NodeId> TreeViewBuilder<'ui, NodeIdType> {
         }
         self.striped = !self.striped;
 
-        // Draw background
-        if self.state.is_selected(&node.id) {
+        // Draw selection background (hidden during drag so the drop
+        // marker line stays visible against nodes with the same color).
+        let is_dragging = self.state.dragged().is_some();
+        if self.state.is_selected(&node.id) && !is_dragging {
             let (shape_idx, rect) = self
                 .selection_background
                 .get_or_insert_with(|| (self.ui.painter().add(Shape::Noop), Rect::NOTHING));
@@ -787,10 +789,19 @@ impl<'ui, NodeIdType: NodeId> TreeViewBuilder<'ui, NodeIdType> {
                     if !self.ui_data.drop_on_self {
                         self.ui_data.drop_target = self.drop_position(row_rect, node, &pos);
                         match self.ui_data.drop_target.as_ref() {
-                            Some((_, dir_position)) if dir_position != &DirPosition::Last => {
+                            Some((_, DirPosition::Last | DirPosition::First)) => {
+                                // Highlight the target directory for "drop inside".
+                                let visuals = self.ui.visuals();
+                                self.ui.painter().rect_filled(
+                                    row_rect.expand(1.0),
+                                    visuals.widgets.active.corner_radius,
+                                    visuals.selection.bg_fill.linear_multiply(0.35),
+                                );
+                            }
+                            Some((_, dir_position)) => {
                                 self.draw_drop_marker(row_rect.y_range(), dir_position);
                             }
-                            _ => (),
+                            None => (),
                         };
                         *self.input = Input::None;
                     }

@@ -260,6 +260,7 @@ fn show_tree_view(ui: &mut Ui, app: &mut MyApp) -> Response {
             }
             Action::DragExternal(..) => {}
             Action::MoveExternal(..) => {}
+            Action::Rename { .. } => {}
         }
     }
     if app.settings.show_size {

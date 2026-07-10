@@ -68,9 +68,9 @@ pub use state::*;
 /// This is just a trait alias for the collection of necessary traits that a node id
 /// must implement.
 #[cfg(not(feature = "persistence"))]
-pub trait NodeId: Clone + PartialEq + Eq + Hash {}
+pub trait NodeId: Clone + PartialEq + Eq + Hash + std::fmt::Debug {}
 #[cfg(not(feature = "persistence"))]
-impl<T> NodeId for T where T: Clone + PartialEq + Eq + Hash {}
+impl<T> NodeId for T where T: Clone + PartialEq + Eq + Hash + std::fmt::Debug {}
 
 #[cfg(feature = "persistence")]
 /// A node in the tree is identified by an id that must implement this trait.
@@ -78,12 +78,18 @@ impl<T> NodeId for T where T: Clone + PartialEq + Eq + Hash {}
 /// This is just a trait alias for the collection of necessary traits that a node id
 /// must implement.
 pub trait NodeId:
-    Clone + PartialEq + Eq + Hash + serde::de::DeserializeOwned + serde::Serialize
+    Clone + PartialEq + Eq + Hash + std::fmt::Debug + serde::de::DeserializeOwned + serde::Serialize
 {
 }
 #[cfg(feature = "persistence")]
 impl<T> NodeId for T where
-    T: Clone + PartialEq + Eq + Hash + serde::de::DeserializeOwned + serde::Serialize
+    T: Clone
+        + PartialEq
+        + Eq
+        + Hash
+        + std::fmt::Debug
+        + serde::de::DeserializeOwned
+        + serde::Serialize
 {
 }
 

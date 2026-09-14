@@ -412,31 +412,43 @@ impl<'ui, NodeIdType: NodeId> TreeViewBuilder<'ui, NodeIdType> {
                         .layout(egui::Layout::left_to_right(egui::Align::Center)),
                 );
                 // Paint over the label background.
-                ui.painter().rect_filled(
-                    label,
-                    0.0,
-                    ui.visuals().extreme_bg_color,
-                );
+                ui.painter()
+                    .rect_filled(label, 0.0, ui.visuals().extreme_bg_color);
                 let response = ui.add(
                     egui::TextEdit::singleline(rename_buf)
                         .id(edit_id)
                         .desired_width(label.width())
                         .frame(egui::Frame::NONE),
                 );
-                // Request focus on the first frame.
-                if !response.has_focus() {
-                    response.request_focus();
-                }
-                // Commit on Enter or focus-lost.
-                if response.lost_focus() {
-                    let committed_name = rename_buf.clone();
-                    let committed_id = rename_id.clone();
-                    // Defer clear + action emit to after mutable borrow ends.
-                    self.rename_result = Some((committed_id, committed_name));
-                }
-                // Cancel on Escape.
+                // Escape abandons the edit, whatever else happened.
                 if ui.input(|i| i.key_pressed(egui::Key::Escape)) {
                     self.rename_result = Some((rename_id.clone(), String::new()));
+                } else {
+                    // Enter is read directly rather than inferred from
+                    // `lost_focus()`.
+                    //
+                    // A `TextEdit` surrenders focus when Enter is pressed, but
+                    // egui only reports that loss on the FOLLOWING frame. The
+                    // focus request below ran on every frame, not just the
+                    // first as its comment claimed, so it re-took focus on the
+                    // very frame the field had given it up -- and by the time
+                    // the loss would have been observable, the field was
+                    // focused again. `lost_focus()` therefore never read true
+                    // and the rename could not be committed at all: typing
+                    // worked, Enter did nothing, and the editor stayed open.
+                    let committed =
+                        ui.input(|i| i.key_pressed(egui::Key::Enter)) || response.lost_focus();
+                    if committed {
+                        let committed_name = rename_buf.clone();
+                        let committed_id = rename_id.clone();
+                        // Defer clear + action emit to after the mutable
+                        // borrow ends.
+                        self.rename_result = Some((committed_id, committed_name));
+                    } else if !response.has_focus() {
+                        // Only when NOT committing, so the request cannot
+                        // cancel out the commit it is racing.
+                        response.request_focus();
+                    }
                 }
             }
         }

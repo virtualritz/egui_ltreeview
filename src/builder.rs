@@ -405,7 +405,7 @@ impl<'ui, NodeIdType: NodeId> TreeViewBuilder<'ui, NodeIdType> {
         // when this node is in rename mode.
         if let Some((ref rename_id, ref mut rename_buf)) = self.state.renaming {
             if *rename_id == node.id {
-                let edit_id = self.ui.id().with("rename_edit");
+                let edit_id = self.ui.scope_id().with("rename_edit");
                 let mut ui = self.ui.new_child(
                     egui::UiBuilder::new()
                         .max_rect(label)

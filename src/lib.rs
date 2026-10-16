@@ -22,7 +22,7 @@
 //! # use egui_ltreeview::*;
 //! # use egui::*;
 //! # fn ui(ui: &mut egui::Ui){
-//! TreeView::new(Id::new("tree view")).show(ui, |builder| {
+//! TreeView::new(Id::unique("tree view")).show(ui, |builder| {
 //!     builder.dir(0, "Root");
 //!     builder.leaf(1, "Ava");
 //!     builder.leaf(2, "Benjamin");

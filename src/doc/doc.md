@@ -113,12 +113,12 @@ In most cases a tree view is placed in a scroll area in a left hand side panel. 
 ```
 # use egui_ltreeview::*;
 # use egui::*;
-# fn ui(ctx: &mut egui::Context){
-egui::SidePanel::left(Id::new("tree view panel"))
+# fn ui(ui: &mut egui::Ui){
+egui::Panel::left(Id::unique("tree view panel"))
     .resizable(true)
-    .show(ctx, |ui| {
+    .show(ui, |ui| {
         ScrollArea::both().show(ui, |ui| {
-            TreeView::new(Id::new("tree view")).show(ui, |builder|{
+            TreeView::new(Id::unique("tree view")).show(ui, |builder|{
                 # builder.leaf(0, "");
                 // build your tree here
             })
@@ -139,7 +139,7 @@ ui.group(|ui| {
         .max_height(200.0)
         .max_width(200.0)
         .show(ui, |ui| {
-            TreeView::new(Id::new("tree view")).show(ui, |builder| {
+            TreeView::new(Id::unique("tree view")).show(ui, |builder| {
                     # builder.leaf(0, "");
                     // build your tree here
                 },
@@ -173,7 +173,7 @@ The [`TreeViewBuilder::node`] and [`TreeViewBuilder::dir`] methods return the op
 # use egui_ltreeview::*;
 # use egui::*;
 # fn ui(ui: &mut egui::Ui){
-TreeView::new(Id::new("tree view")).show(ui, |builder| {
+TreeView::new(Id::unique("tree view")).show(ui, |builder| {
     let is_root_visible = builder.dir(0, "Root");
     if is_root_visible{
         builder.leaf(1, "Ava");
@@ -202,7 +202,7 @@ This is an example implementation of the [`NodeConfig`] trait with a simple labe
 # use egui_ltreeview::*;
 # use egui::*;
 # fn ui(ui: &mut egui::Ui){
-TreeView::new(Id::new("tree view")).show(ui, |builder| {
+TreeView::new(Id::unique("tree view")).show(ui, |builder| {
     builder.node(SimpleNode::new(0, "Root", true));
     builder.node(SimpleNode::new(1, "Ava", false));
     builder.node(SimpleNode::new(2, "Benjamin", false));

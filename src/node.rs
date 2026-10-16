@@ -462,7 +462,7 @@ impl<'config, NodeIdType: NodeId> Node<'config, NodeIdType> {
                         },
                     );
                 } else {
-                    let icon_id = Id::new(&self.id).with("tree view closer icon");
+                    let icon_id = Id::unique(&self.id).with("tree view closer icon");
                     let openness = ui.ctx().animate_bool(icon_id, self.is_open);
                     paint_default_icon(ui, openness, &small_rect, is_hovered);
                 }
